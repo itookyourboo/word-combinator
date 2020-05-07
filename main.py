@@ -54,7 +54,7 @@ def handle_dialog(res, req):
                 UI.add_default_buttons(res, user)
                 return
 
-        DialogManager.wtf(res, user)
+        DialogManager.wtf(res, tokens, user)
 
     UI.add_default_buttons(res, user)
 
