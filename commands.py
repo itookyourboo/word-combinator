@@ -46,7 +46,7 @@ class DialogManager:
         elif state == State.PLAY:
             res['response']['text'] = 'Составьте из букв данного слова другие слова'
         else:
-            res['response']['text'] = 'Добавь тут обработку)0'
+            res['response']['text'] = 'Добавь тут обработку)'
 
     @staticmethod
     @command(ABILITIES)
