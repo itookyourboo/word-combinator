@@ -30,8 +30,9 @@ def command(words):
 class DialogManager:
     @staticmethod
     def hello(res, user):
-        res['response']['text'] = 'Привет! Это игра Комбинатор'
-        res['response']['buttons'] = [UI.button('Играть')]
+        res['response']['text'] = 'Привет! В этой игре вам нужно составлять слова из букв заданного слова.\n' \
+                                  'Например, из слова "КОмбинаТор" можно составить слово "кот". Начнём?'
+        res['response']['buttons'] = [UI.button('Да')]
         user['state'] = State.HELLO
 
     @staticmethod
@@ -39,22 +40,25 @@ class DialogManager:
     def help(res, user):
         state = user['state']
         if state == State.HELLO:
-            res['response']['text'] = 'Я тебе очень помог'
+            res['response']['text'] = 'Правила просты: я даю вам слово, а вы составляяете из его букв другие слова.\n' \
+                                      'Но следите за количеством букв - из слова "Санки" нельзя составить "Ананас".\n' \
+                                      'Приступим?'
         elif state == State.PLAY:
-            res['response']['text'] = 'Играть надо так'
+            res['response']['text'] = 'Составьте из букв данного слова другие слова'
         else:
             res['response']['text'] = 'Добавь тут обработку)0'
 
     @staticmethod
     @command(ABILITIES)
     def abilities(res, user):
-        res['response']['text'] = 'Я могу всё'
+        res['response']['text'] = 'Я помогаю вам провести время с пользой. С помощью этой игры вы развиваете память,' \
+                                  'а также узнаёте новые слова.'
 
     @staticmethod
     @command(PLAY)
     def play(res, user):
         word = get_random_word(8, 20)
-        res['response']['text'] = f'Вот твоё первое слово:\n{word}'
+        res['response']['text'] = f'Итак, исходное слово:\n{word}'
         res['response']['buttons'] = [UI.button('Закончить')]
         user['state'] = State.PLAY
 
@@ -65,7 +69,7 @@ class DialogManager:
     @staticmethod
     @command(STOP)
     def stop(res, user):
-        res['response']['text'] = 'Ты в главном меню'
+        res['response']['text'] = 'Хорошо, закончили'
         res['response']['buttons'] = [UI.button('Играть')]
         user['state'] = State.HELLO
 
@@ -75,7 +79,7 @@ class DialogManager:
             DialogManager.init_words(res, tokens, user)
             return
 
-        res['response']['text'] = 'Непонятно'
+        res['response']['text'] = 'Извините, я вас не понимаю'
         # TODO: Write command and state to txt file
 
     @staticmethod
@@ -90,10 +94,10 @@ class DialogManager:
             user['named'].append(x)
 
         if len(tmp) == 0:
-            res['response']['text'] = 'Хм, таких слов я не знаю'
+            res['response']['text'] = 'Подумайте ещё'
         else:
-            res['response']['text'] = f"Отгаданы следующие слова: {', '.join(tmp)}\n" \
-                                      f"Всего вы нашли {len(user['named'])}"
+            res['response']['text'] = f"Засчитала: {', '.join(tmp)}\n" \
+                                      f"Всего найдено: {len(user['named'])}"
 
         if len(user['unnamed']) == 0:
             res['response']['text'] += '\nБраво! Вы отгадали все слова!\nСыграем ещё?'
