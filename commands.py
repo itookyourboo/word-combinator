@@ -51,7 +51,7 @@ class DialogManager:
     @staticmethod
     @command(ABILITIES)
     def abilities(res, user):
-        res['response']['text'] = 'Я помогаю вам провести время с пользой. С помощью этой игры вы развиваете память,' \
+        res['response']['text'] = 'Я помогаю вам провести время с пользой. С помощью этой игры вы развиваете память, ' \
                                   'а также узнаёте новые слова.'
 
     @staticmethod
