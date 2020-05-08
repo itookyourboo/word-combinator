@@ -50,9 +50,10 @@ def handle_dialog(res, req):
 
         for cmd in COMMANDS:
             if any(word in tokens for word in cmd):
-                COMMANDS[cmd]()(res, user)
+                COMMANDS[cmd]()(res, tokens, user)
                 UI.add_default_buttons(res, user)
-                return
+                if 'text' in res.get('response', {}):
+                    return
 
         DialogManager.wtf(res, tokens, user)
 
