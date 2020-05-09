@@ -31,7 +31,8 @@ class DialogManager:
             DBHelper.new_player(user_id)
         else:
             res['response']['text'] = f'{choice(HELLO_AGAIN)}\n' \
-                                      f'Вы отгадали уже целых {words} {DBHelper.morph_words(words)}!\n' \
+                                      f'Вы отгадали уже целых {"одно" if words == 1 else words} ' \
+                                      f'{DBHelper.morph_words(words)}!\n' \
                                       f'Сыграем ещё?'
         res['response']['buttons'] = [UI.button('Да')]
         user['state'] = State.HELLO
@@ -169,7 +170,8 @@ class GameManager:
     @staticmethod
     def what_and_how_much(named, user):
         num = len(named)
-        return f'Засчитала {num} {DBHelper.morph_words(num)}: {", ".join(named)}.\nВсего найдено: {len(user["named"])}'
+        return f'Засчитала {"одно" if num == 1 else num} {DBHelper.morph_words(num)}: {", ".join(named)}.\n' \
+               f'Всего найдено: {len(user["named"])}'
 
     @staticmethod
     def init_words(res, req, session):
