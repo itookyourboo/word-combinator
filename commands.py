@@ -1,5 +1,5 @@
 from ui import UI
-from dbhelper import get_random_word, get_words_from_word
+from dbhelper import get_random_word, get_words_from_word, add_wtf
 
 
 class State:
@@ -120,7 +120,8 @@ class DialogManager:
             if ok:
                 res['response']['text'] = DialogManager.what_and_how_much(named, user)
             else:
-                res['response']['text'] = f'Слово: {user["word"]}.\nВы отгадали {len(user["named"])}, осталось ещё {len(user["unnamed"])}'
+                res['response']['text'] = f'Слово: {user["word"]}.\nВы отгадали {len(user["named"])}, ' \
+                                          f'осталось ещё {len(user["unnamed"])}'
 
     @staticmethod
     def wtf(res, tokens, user):
@@ -129,7 +130,7 @@ class DialogManager:
             return
 
         res['response']['text'] = 'Извините, я вас не понимаю'
-        # TODO: Write command and state to txt file
+        add_wtf(user['state'], ' '.join(tokens))
 
     @staticmethod
     def check_for_unnamed(tokens, user):

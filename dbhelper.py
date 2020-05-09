@@ -27,5 +27,10 @@ def get_words_from_word(word):
     return list(words)
 
 
+def add_wtf(state, text):
+    with open(os.path.join(BASE_DIR, 'wtf.txt'), 'a', encoding='utf8') as file:
+        file.write(f'STATE: {state}, TEXT - {text}\n')
+
+
 words_ = get_words_from_word('гельминт')
 print(len(words_), *words_)
