@@ -40,7 +40,7 @@ def handle_dialog(res, req):
 
     if req['session']['new']:
         user = sessionStorage[user_id] = {}
-        DialogManager.hello(res, user)
+        DialogManager.hello(res, user, user_id)
     else:
         if user_id not in sessionStorage:
             sessionStorage[user_id] = {'state': State.HELLO}
@@ -48,14 +48,14 @@ def handle_dialog(res, req):
         user = sessionStorage[user_id]
         tokens = req['request']['nlu']['tokens']
 
-        for cmd in COMMANDS:
-            if any(word in tokens for word in cmd):
-                COMMANDS[cmd]()(res, tokens, user)
+        for words, states in COMMANDS:
+            if any(word in tokens for word in words) and user['state'] in states:
+                COMMANDS[words, states]()(res, req, sessionStorage)
                 UI.add_default_buttons(res, user)
                 if 'text' in res.get('response', {}):
                     return
 
-        DialogManager.wtf(res, tokens, user)
+        DialogManager.wtf(res, req, sessionStorage)
 
     UI.add_default_buttons(res, user)
 
