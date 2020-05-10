@@ -23,7 +23,8 @@ def main():
     handle_dialog(res, req)
     user_id = get_user_id(req)
     if req["request"]["original_utterance"] != 'ping':
-        logging.info(f"{user_id[:5]}\n"
+        logging.info(f"\n"
+                     f"USR: {user_id[:5]}\n"
                      f"REQ: {req['request']['original_utterance']}\n"
                      f"RES: {res['response']['text']}\n"
                      f"----------------------")
