@@ -83,13 +83,15 @@ class DialogManager:
         user_id, user, tokens = parse_info(req, session)
         if user['state'] == State.PLAY:
             ok, named = GameManager.check_for_unnamed(tokens, user, user_id)
+            res['response']['text'] = ''
             if ok:
-                res['response']['text'] = GameManager.what_and_how_much(named, user)
-            else:
-                res['response']['text'] = f'{get(INCORRECT)}\n{get(WANNA_EXIT)}'
-                res['response']['buttons'] = [UI.button(get(YES_BTN)), UI.button(get(NO_BTN)),
-                                              UI.button(get(CHANGE_BTN))]
-                user['state'] = State.WANNA_LEAVE
+                res['response']['text'] += GameManager.what_and_how_much(named, user) + '\n'
+
+            res['response']['text'] += f'{get(WANNA_EXIT)}'
+            res['response']['buttons'] = [UI.button(get(YES_BTN)), UI.button(get(NO_BTN)),
+                                          UI.button(get(CHANGE_BTN))]
+            user['state'] = State.WANNA_LEAVE
+
         elif user['state'] == State.HELLO:
             res['response']['text'] = get(LEFT)
             res['response']['end_session'] = True
@@ -100,14 +102,16 @@ class DialogManager:
         user_id, user, tokens = parse_info(req, session)
         if user['state'] == State.PLAY:
             ok, named = GameManager.check_for_unnamed(tokens, user, user_id)
+            res['response']['text'] = ''
             if ok:
-                res['response']['text'] = GameManager.what_and_how_much(named, user)
-            else:
-                res['response']['text'] = f'{get(INCORRECT)}\n{get(WANNA_CHANGE)}'
-                res['response']['buttons'] = [UI.button(get(YES_BTN)), UI.button(get(NO_BTN))]
-                user['state'] = State.WANNA_CHANGE
+                res['response']['text'] += GameManager.what_and_how_much(named, user) + '\n'
+
+            res['response']['text'] += f'{get(WANNA_CHANGE)}'
+            res['response']['buttons'] = [UI.button(get(YES_BTN)), UI.button(get(NO_BTN))]
+            user['state'] = State.WANNA_CHANGE
+
         elif user['state'] == State.WANNA_LEAVE:
-            GameManager.start_new_game(res, user, user_id)
+            GameManager.start_new_game(res, user, user_id, after_change=True)
 
     @staticmethod
     @command(NAMED, states=(State.PLAY, State.HELLO))
@@ -149,7 +153,7 @@ class DialogManager:
     @command(YES, states=State.WANNA_CHANGE)
     def yes_change(res, req, session):
         user_id, user, tokens = parse_info(req, session)
-        GameManager.start_new_game(res, user, user_id)
+        GameManager.start_new_game(res, user, user_id, after_change=True)
 
     @staticmethod
     def wtf(res, req, session):
@@ -170,9 +174,10 @@ class DialogManager:
 
 class GameManager:
     @staticmethod
-    def start_new_game(res, user, user_id):
+    def start_new_game(res, user, user_id, after_change=False):
         word = DBHelper.get_random_word(WORD_MIN_LENGTH, WORD_MAX_LENGTH)
-        res['response']['text'] = f'{get(START_WORD)} {word.upper()}.\n' \
+        res['response']['text'] = f'{get(YOUR_WORD if after_change else START_WORD)}\n' \
+                                  f'{word.upper()}.\n' \
                                   f'{get(CONSTRUCT)}\n' \
                                   f'{get(CAN_NAME_SEVERAL)}'
         res['response']['buttons'] = [UI.button(get(SOURCE_BTN))]
