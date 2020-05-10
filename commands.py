@@ -39,6 +39,7 @@ class DialogManager:
             res['response']['text'] = f'{get(HELLO_AGAIN)}\n' \
                                       f'{get(START_FOUND)} {DBHelper.num_and_word(words)}!\n' \
                                       f'{get(PLAY_MORE)}'
+            res['response']['tts'] = res['response']['text'].replace('слов', 'сл+ов')
         res['response']['buttons'] = [UI.button(get(YES_BTN))]
         user['state'] = State.HELLO
 
@@ -118,11 +119,13 @@ class DialogManager:
             if ok:
                 res['response']['text'] = GameManager.what_and_how_much(named, user) + '\n'
             res['response']['text'] += f'{get(YOUR_WORD)}{user["word"].upper()}.\n' \
-                                      f'{get(YOU_FOUND)} {len(user["named"])}, ' \
-                                      f'{get(REMAINED)} {len(user["unnamed"])}'
+                                       f'{get(YOU_FOUND)} {len(user["named"])}, ' \
+                                       f'{get(REMAINED)} {len(user["unnamed"])}'
         elif user['state'] == State.HELLO:
             words, daily = DBHelper.get_words(user_id)
             res['response']['text'] = f'{get(ALL_TIME_FOUND)} {DBHelper.num_and_word(words)}'
+
+        res['response']['tts'] = res['response']['text'].replace('слов', 'сл+ов')
 
     @staticmethod
     @command(YES, states=State.WANNA_LEAVE)
@@ -220,6 +223,8 @@ class GameManager:
             res['response']['text'] = get(INCORRECT)
         else:
             res['response']['text'] = GameManager.what_and_how_much(named, user)
+            res['response']['tts'] = res['response']['text'].replace('слов', 'сл+ов')
+
         res['response']['buttons'] = [UI.button(get(SOURCE_BTN))]
 
         if GameManager.check_for_win(user):
