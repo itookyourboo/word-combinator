@@ -74,6 +74,10 @@ class DBHelper:
         elif (num % 10) in (2, 3, 4):
             return 'слова'
 
+    @staticmethod
+    def num_and_word(num):
+        return f'{"одно" if num == 1 else num} {DBHelper.morph_words(num)}'
+
 
 if __name__ == '__main__':
     while True:
@@ -81,9 +85,9 @@ if __name__ == '__main__':
         [print(i) for i in cursor.fetchall()]
         db.commit()
 
-
+#
 # for i in range(120):
 #     print(i, morph(i))
-#
-# words_ = DBHelper.get_words_from_word('Абердин')
+
+# words_ = DBHelper.get_words_from_word('вежливый')
 # print(len(words_), *words_)
