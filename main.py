@@ -22,10 +22,11 @@ def main():
     req = request.json
     handle_dialog(res, req)
     user_id = get_user_id(req)
-    if req["request"]["original_utterance"] != 'ping':
+    original_utterance = req.get('request', {}).get('original_utterance', 'Empty request')
+    if original_utterance != 'ping':
         logging.info(f"\n"
                      f"USR: {user_id[:5]}\n"
-                     f"REQ: {req['request']['original_utterance']}\n"
+                     f"REQ: {original_utterance}\n"
                      f"RES: {res['response']['text']}\n"
                      f"----------------------")
     return json.dumps(res)
@@ -46,7 +47,7 @@ def handle_dialog(res, req):
             sessionStorage[user_id] = {'state': State.HELLO}
 
         user = sessionStorage[user_id]
-        tokens = req['request']['nlu']['tokens']
+        tokens = req.get('request', {}).get('nlu', {}).get('tokens', ['Empty'])
 
         for words, states in COMMANDS:
             if any(word in tokens for word in words) and user['state'] in states:
