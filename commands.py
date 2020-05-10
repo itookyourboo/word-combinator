@@ -158,7 +158,11 @@ class DialogManager:
         res['response']['text'] = get(NOT_UNDERSTAND)
         res['response']['text'] += '\n' + (get(TO_START) if user['state'] == State.HELLO
                                            else get(TO_LEAVE))
-        DBHelper.add_wtf(user['state'], ' '.join(tokens))
+
+        if 'original_utterance' not in req.get('request', {}):
+            DBHelper.add_wtf(user['state'], ' '.join(tokens))
+        else:
+            DBHelper.add_wtf(user['state'], req['request']['original_utterance'])
 
 
 class GameManager:
