@@ -33,9 +33,8 @@ def main():
 
 def handle_dialog(res, req):
     user_id = get_user_id(req)
-    original = req['request']['original_utterance']
 
-    if original == 'ping':
+    if req.get('request', {}).get('original_utterance', '') == 'ping':
         res['response']['text'] = 'Всё работает!'
         return
 
