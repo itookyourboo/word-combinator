@@ -122,7 +122,8 @@ class DialogManager:
             res['response']['text'] = ''
             if ok:
                 res['response']['text'] = GameManager.what_and_how_much(named, user) + '\n'
-            res['response']['text'] += f'{get(YOUR_WORD)}{user["word"].upper()}.\n' \
+            res['response']['text'] += f'{get(YOUR_WORD)}\n' \
+                                       f'{user["word"].upper()}.\n' \
                                        f'{get(YOU_FOUND)} {len(user["named"])}, ' \
                                        f'{get(REMAINED)} {len(user["unnamed"])}'
         elif user['state'] == State.HELLO:
@@ -144,8 +145,9 @@ class DialogManager:
     def stay(res, req, session):
         user_id, user, tokens = parse_info(req, session)
         res['response']['text'] = f'{get(OK_STAY)}\n' \
-                                  f'{get(YOUR_WORD)}{user["word"].upper()}.\n' \
-                                  f'{get(CAN_NAME_SEVERAL)}'
+                                  f'{get(YOUR_WORD)}\n' \
+                                  f'{user["word"].upper()}.\n' \
+                                  f'{choice((get(CAN_NAME_SEVERAL), get(I_CAN_CHANGE)))}'
         res['response']['buttons'] = [UI.button(get(SOURCE_BTN))]
         user['state'] = State.PLAY
 
@@ -177,10 +179,9 @@ class GameManager:
     def start_new_game(res, user, user_id, after_change=False):
         word = DBHelper.get_random_word(WORD_MIN_LENGTH, WORD_MAX_LENGTH)
         res['response']['text'] = f'{get(YOUR_WORD if after_change else START_WORD)}\n' \
-                                  f'{word.upper()}.\n' \
-                                  f'{get(CONSTRUCT)}\n' \
-                                  f'{get(CAN_NAME_SEVERAL)}'
+                                  f'{word.upper()}.\n'
         res['response']['buttons'] = [UI.button(get(SOURCE_BTN))]
+
         user['state'] = State.PLAY
         user['word'] = word
         user['used_hint'] = False
@@ -188,8 +189,11 @@ class GameManager:
         user['unnamed'] = DBHelper.get_words_from_word(word)
 
         if DBHelper.get_words(user_id)[0] == 0:
-            word = choice(list(filter(lambda x: len(x) >= MIN_WORD_LENGTH_TO_HINT, user['unnamed'])))
-            res['response']['buttons'].insert(0, UI.button(word.capitalize()))
+            hint = choice(list(filter(lambda x: len(x) >= MIN_WORD_LENGTH_TO_HINT, user['unnamed'])))
+            res['response']['buttons'].insert(0, UI.button(hint.capitalize()))
+            res['response']['text'] += f'Подскажу первое - {hint}.\n'
+
+        res['response']['text'] += f'{choice((get(CAN_NAME_SEVERAL), get(I_CAN_CHANGE)))}'
 
     @staticmethod
     def check_for_unnamed(tokens, user, user_id):
