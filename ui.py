@@ -19,13 +19,10 @@ class UI:
             res['response']['buttons'] = deepcopy(user.get('last_btns', []))
 
         if user['state'] == State.PLAY:
-            txt = get(HINT_BTN) if not user['used_hint'] else get(HELP_BTN)
-            if all(x['title'] not in list(HINT_BTN) + list(HELP_BTN) for x in res['response']['buttons']):
-                res['response']['buttons'].append(UI.button(txt))
-
-            change_btn = UI.button(get(CHANGE_BTN))
-            if change_btn not in res['response'].get('buttons', []):
-                res['response'].get('buttons', []).append(change_btn)
+            for button in (HINT_BTN, CHANGE_BTN, HELP_BTN):
+                btn = UI.button(button)
+                if btn not in res['response'].get('buttons', []):
+                    res['response'].get('buttons', []).append(btn)
 
         elif user['state'] == State.HELLO:
             for button in [get(HELP_BTN), get(WHAT_YOU_CAN_BTN)]:
