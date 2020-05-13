@@ -13,13 +13,13 @@ def command(words, states):
         def wrapped():
             return func
 
-        COMMANDS[words, states if isinstance(states, tuple) else (states, )] = wrapped
+        COMMANDS[tuple(words), states if isinstance(states, tuple) else (states, )] = wrapped
         return wrapped
 
     return decorator
 
 
-MAX_WORDS_TO_HINT = 2
+MAX_WORDS_TO_HINT = 1
 MIN_WORD_LENGTH_TO_HINT = 4
 WORD_MIN_LENGTH = 8
 WORD_MAX_LENGTH = 20
@@ -52,19 +52,17 @@ class DialogManager:
             res['response']['text'] = get(HELP_HELLO)
         elif state == State.PLAY:
             ok, named = GameManager.check_for_unnamed(tokens, user, user_id)
-
             res['response']['text'] = f'{get(HELP_PLAY).format(user["word"].upper())}\n'
-            if not user['used_hint']:
-                user['used_hint'] = True
-                unnamed = user['unnamed'][:]
-                shuffle(unnamed)
-                res['response']['text'] = f'{get(GIVE_HINT)} {", ".join(unnamed[:min(MAX_WORDS_TO_HINT, len(unnamed))])}.'
-            else:
-                res['response']['text'] = f'{get(HELP_PLAY).format(user["word"].upper())}\n' \
-                                          f'{get(NO_HINT)}'
-
             if ok:
                 res['response']['text'] += '\n' + GameManager.what_and_how_much(named, user)
+
+    @staticmethod
+    @command(HINT, states=State.PLAY)
+    def hint(res, req, session):
+        user_id, user, tokens = parse_info(req, session)
+        unnamed = user['unnamed'][:]
+        shuffle(unnamed)
+        res['response']['text'] = f'{get(GIVE_HINT)} {", ".join(unnamed[:min(MAX_WORDS_TO_HINT, len(unnamed))])}.'
 
     @staticmethod
     @command(ABILITIES, states=(State.HELLO, State.PLAY))
@@ -72,13 +70,19 @@ class DialogManager:
         res['response']['text'] = get(WHAT_YOU_CAN)
 
     @staticmethod
-    @command(PLAY, states=(State.HELLO,))
+    @command(MENU_YES, states=(State.HELLO,))
     def play(res, req, session):
         user_id, user, tokens = parse_info(req, session)
         GameManager.start_new_game(res, user, user_id)
 
     @staticmethod
-    @command(STOP, states=(State.HELLO, State.PLAY))
+    @command(MENU_NO, states=State.HELLO)
+    def exit(res, req, session):
+        res['response']['text'] = get(LEFT)
+        res['response']['end_session'] = True
+
+    @staticmethod
+    @command(STOP, states=State.PLAY)
     def stop(res, req, session):
         user_id, user, tokens = parse_info(req, session)
         if user['state'] == State.PLAY:
@@ -92,26 +96,44 @@ class DialogManager:
                                           UI.button(get(CHANGE_BTN))]
             user['state'] = State.WANNA_LEAVE
 
-        elif user['state'] == State.HELLO:
-            res['response']['text'] = get(LEFT)
-            res['response']['end_session'] = True
+    @staticmethod
+    @command(LEAVE_YES, states=State.WANNA_LEAVE)
+    def leave_yes(res, req, session):
+        user_id, user, tokens = parse_info(req, session)
+        res['response']['text'] = get(OK_LEAVE)
+        res['response']['buttons'] = [UI.button(get(PLAY_BTN))]
+        user['state'] = State.HELLO
 
     @staticmethod
-    @command(CHANGE_WORD, states=(State.PLAY, State.WANNA_LEAVE))
+    @command(LEAVE_NO, states=State.WANNA_LEAVE)
+    def leave_no(res, req, session):
+        user_id, user, tokens = parse_info(req, session)
+        GameManager.stay(res, user)
+
+    @staticmethod
+    @command(CHANGE_WORD, states=State.PLAY)
     def change_word(res, req, session):
         user_id, user, tokens = parse_info(req, session)
-        if user['state'] == State.PLAY:
-            ok, named = GameManager.check_for_unnamed(tokens, user, user_id)
-            res['response']['text'] = ''
-            if ok:
-                res['response']['text'] += GameManager.what_and_how_much(named, user) + '\n'
+        ok, named = GameManager.check_for_unnamed(tokens, user, user_id)
+        res['response']['text'] = ''
+        if ok:
+            res['response']['text'] += GameManager.what_and_how_much(named, user) + '\n'
 
-            res['response']['text'] += f'{get(WANNA_CHANGE)}'
-            res['response']['buttons'] = [UI.button(get(YES_BTN)), UI.button(get(NO_BTN))]
-            user['state'] = State.WANNA_CHANGE
+        res['response']['text'] += f'{get(WANNA_CHANGE)}'
+        res['response']['buttons'] = [UI.button(get(YES_BTN)), UI.button(get(NO_BTN))]
+        user['state'] = State.WANNA_CHANGE
 
-        elif user['state'] == State.WANNA_LEAVE:
-            GameManager.start_new_game(res, user, user_id, after_change=True)
+    @staticmethod
+    @command(CHANGE_YES, states=State.WANNA_CHANGE)
+    def change_yes(res, req, session):
+        user_id, user, tokens = parse_info(req, session)
+        GameManager.start_new_game(res, user, user_id, after_change=True)
+
+    @staticmethod
+    @command(CHANGE_NO, states=State.WANNA_CHANGE)
+    def change_no(res, req, session):
+        user_id, user, tokens = parse_info(req, session)
+        GameManager.stay(res, user)
 
     @staticmethod
     @command(NAMED, states=(State.PLAY, State.HELLO))
@@ -133,31 +155,6 @@ class DialogManager:
         res['response']['tts'] = res['response']['text'].replace('слов', 'сл+ов')
 
     @staticmethod
-    @command(YES, states=State.WANNA_LEAVE)
-    def leave(res, req, session):
-        user_id, user, tokens = parse_info(req, session)
-        res['response']['text'] = get(OK_LEAVE)
-        res['response']['buttons'] = [UI.button(get(PLAY_BTN))]
-        user['state'] = State.HELLO
-
-    @staticmethod
-    @command(NO, states=(State.WANNA_LEAVE, State.WANNA_CHANGE))
-    def stay(res, req, session):
-        user_id, user, tokens = parse_info(req, session)
-        res['response']['text'] = f'{get(OK_STAY)}\n' \
-                                  f'{get(YOUR_WORD)}\n' \
-                                  f'{user["word"].upper()}.\n' \
-                                  f'{choice((get(CAN_NAME_SEVERAL), get(I_CAN_CHANGE)))}'
-        res['response']['buttons'] = [UI.button(get(SOURCE_BTN))]
-        user['state'] = State.PLAY
-
-    @staticmethod
-    @command(YES, states=State.WANNA_CHANGE)
-    def yes_change(res, req, session):
-        user_id, user, tokens = parse_info(req, session)
-        GameManager.start_new_game(res, user, user_id, after_change=True)
-
-    @staticmethod
     def wtf(res, req, session):
         user_id, user, tokens = parse_info(req, session)
         if user['state'] == State.PLAY:
@@ -165,8 +162,8 @@ class DialogManager:
             return
 
         res['response']['text'] = get(NOT_UNDERSTAND)
-        res['response']['text'] += '\n' + (get(TO_START) if user['state'] == State.HELLO
-                                           else get(TO_LEAVE))
+        res['response']['text'] += '\n' + (get(TO_START) if user['state'] == State.HELLO else
+                                           (get(TO_LEAVE) if user['state'] == State.WANNA_LEAVE else get(TO_CHANGE)))
 
         if 'original_utterance' not in req.get('request', {}):
             DBHelper.add_wtf(user['state'], ' '.join(tokens))
@@ -184,7 +181,6 @@ class GameManager:
 
         user['state'] = State.PLAY
         user['word'] = word
-        user['used_hint'] = False
         user['named'] = []
         user['unnamed'] = DBHelper.get_words_from_word(word)
 
@@ -196,21 +192,36 @@ class GameManager:
         res['response']['text'] += f'{choice((get(CAN_NAME_SEVERAL), get(I_CAN_CHANGE)))}'
 
     @staticmethod
+    def stay(res, user):
+        res['response']['text'] = f'{get(OK_STAY)}\n' \
+                                  f'{get(YOUR_WORD)}\n' \
+                                  f'{user["word"].upper()}.\n' \
+                                  f'{choice((get(CAN_NAME_SEVERAL), get(I_CAN_CHANGE)))}'
+        res['response']['buttons'] = [UI.button(get(SOURCE_BTN))]
+        user['state'] = State.PLAY
+
+    @staticmethod
     def check_for_unnamed(tokens, user, user_id):
         tmp = []
+        were = []
         for token in tokens:
             if token in user['unnamed']:
                 tmp.append(token)
                 user['unnamed'].remove(token)
+            if token in user['named']:
+                were.append(token)
 
         for x in tmp:
             user['named'].append(x)
 
-        if len(tmp) == 0:
-            return False, None
+        if len(tmp) == 0 and len(were) == 0:
+            return 0, None
+
+        if len(tmp) == 0 and len(were) != 0:
+            return 1, were
 
         DBHelper.inc_words(user_id, len(tmp))
-        return True, tmp
+        return 2, tmp
 
     @staticmethod
     def check_for_win(user):
@@ -230,6 +241,11 @@ class GameManager:
 
         if ok == 0:
             res['response']['text'] = get(INCORRECT)
+        elif ok == 1:
+            if len(named) == 1:
+                res['response']['text'] = get(YOU_NAMED_ONE).format(named[0])
+            else:
+                res['response']['text'] = get(YOU_NAMED_SEVERAL).format(", ".join(named))
         else:
             res['response']['text'] = GameManager.what_and_how_much(named, user)
             res['response']['tts'] = res['response']['text'].replace('слов', 'сл+ов')
@@ -240,6 +256,15 @@ class GameManager:
             res['response']['text'] += f'\n{get(WIN)}'
             user['state'] = State.HELLO
             res['response']['buttons'] = [UI.button(get(YES_BTN))]
+        else:
+            GameManager.show_word(res, user)
+
+    @staticmethod
+    def show_word(res, user):
+        word = user["word"]
+        res['response']['text'] += f'\n\n{word.upper()}'
+        if 'tts' not in res['response']:
+            res['response']['tts'] = res['response']['text'].replace(word, '')
 
 
 def parse_info(req, session):
